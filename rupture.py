@@ -9,6 +9,9 @@ Translation of the .lua code in python by Martin G.
 
 from math import ceil, pi, sqrt, pow, cos
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 # Classes for data
 class Reinforcement:
     def __init__(self, y, A):
@@ -177,8 +180,19 @@ def Interaction(data: Data):
 def Resistance(data: Data):
     interaction = Interaction(data)
     print("ULS Interaction")
+    abs = np.zeros(len(interaction)*2) # Pour plot le diagramme d'interaction
+    abs1 = np.zeros(len(interaction)*2) # Pour plot le diagramme d'interaction
+    ord = np.zeros(len(interaction)*2) # Pour plot le diagramme d'interaction
+    abs2 = np.zeros(len(interaction)*2) # Pour plot le diagramme d'interaction
     for i, s in enumerate(interaction):
+        abs[i], abs[len(interaction) + i] = s['NRd'], s['NRd'] # Pour plot le diagramme d'interaction
+        abs
+        ord[i], ord[len(interaction) + i] = s['MRd'], -s['MRd'] # Pour plot le diagramme d'interaction
         print(f"ec={s['ec']*100:6.3f}% es={s['es']*100:6.3f}% x/d={s['x']/s['d']:6.3f} Fc={s['Fc']:8.1f}kN Fs={s['Fs']:8.1f}kN NRd={s['NRd']:8.1f}kN MRd={s['MRd']:8.1f}kNm")
+    #Plot du diagramme d'interaction
+    plt.plot(abs[:len(interaction)], ord[:len(interaction)], 'blue', linestyle='dashed')
+    plt.plot(abs[len(interaction):], ord[len(interaction):], 'blue', linestyle='dashed')
+    plt.scatter(abs, ord, color='salmon')
     if data.NEd is not None:
         print("ULS Check")
         NEd, NRdmin, NRdmax = data.NEd, interaction[0]['NRd'], interaction[-1]['NRd']
@@ -204,7 +218,7 @@ data = Data(
         ]
     )
 )
-Resistance(data)
+# Resistance(data)
 
 #? Calcul section circulaire
 r = 0.25
@@ -223,7 +237,7 @@ data = Data(
     )
 )
 
-Resistance(data)
+# Resistance(data)
 
 #? Section en T
 data = Data(
@@ -258,3 +272,21 @@ data = Data(
 )
 
 # Resistance(data)
+
+#? Test exo 4.1
+data = Data(
+    section=Section(
+        fck=40,
+        fyk=500,
+        b=lambda y: 0.8,
+        h=0.8,
+        reinforcements=[
+            Reinforcement(0.08, 12 * 40**2 * pi / 4 * 1e-6),
+            Reinforcement(0.8-0.08, 12 * 40**2 * pi / 4 * 1e-6)
+        ]
+    )
+)
+Resistance(data)
+plt.scatter(6375, 4500) # N = 6375kN, M = 4500kNm
+plt.grid()
+plt.show()
