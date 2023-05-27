@@ -10,6 +10,11 @@ Translation of the .lua code in python by Martin G.
 from math import ceil, pi, sqrt, cos
 
 # Classes for data
+class Reinforcement:
+    def __init__(self, y, A):
+        self.y = y
+        self.A = A
+
 class Section:
     def __init__(self, b, m, h, reinforcements, dx=None):
         self.b = b
@@ -66,9 +71,9 @@ def elastic_prop(section: Section):
     Acy = primitive(lambda y: b(y) * y, 0, dx)
     Acyy = primitive(lambda y: b(y) * y * y, 0, dx)
 
-    As = map(reinf, lambda i, r, A: A+r['A'], 0)
-    Asy = map(reinf, lambda i, r, Ay: Ay+r['A']*r['y'], 0)
-    Asyy = map(reinf, lambda i, r, Ayy: Ayy+r['A']*r['y']*r['y'], 0)
+    As = map(reinf, lambda i, r, A: A+r.A, 0)
+    Asy = map(reinf, lambda i, r, Ay: Ay+r.A*r.y, 0)
+    Asyy = map(reinf, lambda i, r, Ayy: Ayy+r.A*r.y*r.y, 0)
 
     def func(y):
         At = m*As+Ac(y)
@@ -103,7 +108,7 @@ def elastic(data: Data):
     if (inter < itermax):
         print(f"Concrete stress = {N/At+MGt/It*yGt:.1f}")
         for i, r in enumerate(section.reinforcements):
-            print(f"Reinforcement [{i+1}] stress (y={r['y']:6.3f}) = {m*(N/At+MGt/It*(yGt-r['y'])):6g}")
+            print(f"Reinforcement [{i+1}] stress (y={r.y:6.3f}) = {m*(N/At+MGt/It*(yGt-r.y)):6g}")
     else:
         print("No convergence")
 
@@ -117,8 +122,8 @@ data = Data(
         b=lambda y: 0.3, 
         h=0.5, 
         reinforcements=[
-            { 'y': 0.45, 'A': 5*16**2 * pi / 4 * 1e-6 },
-            { 'y': 0.05, 'A': 4*12**2 * pi / 4 * 1e-6 }
+            Reinforcement(0.45, 5*16**2 * pi / 4 * 1e-6),
+            Reinforcement(0.05, 4*12**2 * pi / 4 * 1e-6)
         ]
     )
 )
@@ -129,13 +134,6 @@ data = Data(
 r = 0.25
 rs, n, phi = 0.2, 10, 16 # 10 barres de 16mm distribuée sur 0.2m de rayon
 
-reinforcements = []
-for i in range(n):
-    reinforcements.append({
-        'y': r- rs * cos(i*2*pi/n),
-        'A': phi**2 * pi / 4 * 1e-6
-    })
-
 data = Data(
     N=200, 
     M=90, 
@@ -143,7 +141,9 @@ data = Data(
         m=6.06, 
         b=lambda y: 2*sqrt(r**2-(r-y)**2), 
         h=2*r, 
-        reinforcements=reinforcements
+        reinforcements=[
+            Reinforcement(r- rs * cos(i*2*pi/n), phi**2 * pi / 4 * 1e-6) for i in range(n)
+        ]
     )
 )
 

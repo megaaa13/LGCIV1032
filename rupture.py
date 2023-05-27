@@ -9,6 +9,46 @@ Translation of the .lua code in python by Martin G.
 
 from math import ceil, pi, sqrt, pow, cos
 
+# Classes for data
+class Reinforcement:
+    def __init__(self, y, A):
+        self.y = y
+        self.A = A
+
+class Section:
+    def __init__(self, b, fck, h, reinforcements, dx=None,
+                 fyk=500, alpha_cc=0.85, 
+                 gamma_c=1.5, gamma_s=1.15, 
+                 euk=5/100, k=1.08,
+                 Es=200e3):
+        self.b = b
+        self.h = h
+        self.dx = dx
+        self.fck = fck
+        self.fyk = fyk
+        self.alpha_cc = alpha_cc
+        self.gamma_c = gamma_c
+        self.gamma_s = gamma_s
+        self.euk = euk
+        self.k = k
+        self.Es = Es
+        self.reinforcements = reinforcements
+
+    def dxOrH(self):
+        return self.dx if self.dx is not None else self.h / 1000
+    
+class Data:
+    def __init__(self, section: Section, N=0, NEd=None, y0=None):
+        self.section = section
+        self.N = N
+        self.h = self.section.h
+        self.y0 = y0
+        self.NEd = NEd
+    
+    def y0orH(self):
+        return self.y0 if self.y0 is not None else self.h / 2
+
+# Functions
 def interpolate(x1, y1, x2, y2):
     def function(x):
         return y1 + (x - x1) * (y2 - y1) / (x2 - x1)
@@ -96,39 +136,6 @@ def UltimeStrains(d, h, ec2, ecu2, eyd, eud):
         interpolate(0, ecu2, h, 0), # 6
         lambda y: ec2 # 7
     ]
-
-class Section:
-    def __init__(self, b, fck, h, reinforcements, dx=None,
-                 fyk=500, alpha_cc=0.85, 
-                 gamma_c=1.5, gamma_s=1.15, 
-                 euk=5/100, k=1.08,
-                 Es=200e3):
-        self.b = b
-        self.h = h
-        self.dx = dx
-        self.fck = fck
-        self.fyk = fyk
-        self.alpha_cc = alpha_cc
-        self.gamma_c = gamma_c
-        self.gamma_s = gamma_s
-        self.euk = euk
-        self.k = k
-        self.Es = Es
-        self.reinforcements = reinforcements
-
-    def dxOrH(self):
-        return self.dx if self.dx is not None else self.h / 1000
-    
-class Data:
-    def __init__(self, section: Section, N=0, NEd=None, y0=None):
-        self.section = section
-        self.N = N
-        self.h = self.section.h
-        self.y0 = y0
-        self.NEd = NEd
-    
-    def y0orH(self):
-        return self.y0 if self.y0 is not None else self.h / 2
     
 def Interaction(data: Data):
     section = data.section
@@ -136,7 +143,7 @@ def Interaction(data: Data):
     fyk, gamma_s, euk = section.fyk, section.gamma_s, section.euk
     k, Es, reinf = section.k, section.Es, section.reinforcements
     b, y0, dx = section.b, data.y0orH(), section.dxOrH()
-    h, d = section.h, map(reinf, lambda i, r, d: max(r['y'], d), 0)
+    h, d = section.h, map(reinf, lambda i, r, d: max(r.y, d), 0)
     #? strain stress relations
     sigma_c, ec2, ecu2 = StrainStressConcrete(fck, alpha_cc, gamma_c)
     sigma_s, eyd, eud = StrainStressSteel(fyk, gamma_s, euk, k, Es)
@@ -154,8 +161,8 @@ def Interaction(data: Data):
         x = min(max(0, value), h)
         Fc = primitive(lambda y: sigma_c(strain(y))*b(y)*1000, 0, dx)(x)
         Mc = primitive(lambda y: sigma_c(strain(y))*b(y)*(y0-y)*1000, 0, dx)(x)
-        Fs = map(reinf, lambda i, r, F: F+r['A']*sigma_s(strain(r['y']))*1000, 0)
-        Ms = map(reinf, lambda i, r, M: M+r['A']*sigma_s(strain(r['y']))*1000*(y0-r['y']), 0)
+        Fs = map(reinf, lambda i, r, F: F+r.A*sigma_s(strain(r.y))*1000, 0)
+        Ms = map(reinf, lambda i, r, M: M+r.A*sigma_s(strain(r.y))*1000*(y0-r.y), 0)
         NRd, MRd = Fc + Fs, Mc + Ms
         interaction.append({
             'ec': ec, 'es': es, 'x': x,
@@ -193,11 +200,11 @@ data = Data(
         fck=30,
         fyk=500,
         reinforcements=[
-            {'y': 0.45, 'A': 5 * 16**2 * pi / 4 * 1e-6} # 5 barres de 16 en y = 45cm
+            Reinforcement(0.45, 5 * 16**2 * pi / 4 * 1e-6) # 5 barres de 16 en y = 45cm
         ]
     )
 )
-# Resistance(data)
+Resistance(data)
 
 #? Calcul section circulaire
 r = 0.25
@@ -211,16 +218,12 @@ data = Data(
         b=lambda y: 2*sqrt(r**2-(r-y)**2), 
         h=2*r, 
         reinforcements=[
-            {
-                    'y': r- rs * cos(i*2*pi/n),
-                    'A': phi**2 * pi / 4 * 1e-6
-            }
-            for i in range(n)
+            Reinforcement(r- rs * cos(i*2*pi/n), phi**2 * pi / 4 * 1e-6) for i in range(n)
         ]
     )
 )
 
-# Resistance(data)
+Resistance(data)
 
 #? Section en T
 data = Data(
@@ -231,8 +234,8 @@ data = Data(
         b=lambda y: 1.2 if y <= 0.12 else 0.2 if y <= 0.6 else 0.4,
         h=0.75,
         reinforcements=[
-            {'y': 0.04, 'A' : 1664e-6},
-            {'y': 0.68, 'A' : 5485e-6},
+            Reinforcement(0.04, 1664e-6),
+            Reinforcement(0.68, 5485e-6)
         ]
     )
 )
@@ -248,10 +251,10 @@ data = Data(
         b=lambda y: 1.2 if y <= 0.12 else 0.2 if y <= 0.6 else 0.4,
         h=0.75,
         reinforcements=[
-            {'y': 0.04, 'A' : 8 * 12**2 * pi / 4 * 1e-6},
-            {'y': 0.68, 'A' : 5356e-6},
+            Reinforcement(0.04, 8 * 12**2 * pi / 4 * 1e-6),
+            Reinforcement(0.68, 5356e-6)
         ]
     )
 )
 
-Resistance(data)
+# Resistance(data)
