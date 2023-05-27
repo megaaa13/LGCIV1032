@@ -287,6 +287,8 @@ data = Data(
     )
 )
 Resistance(data)
-plt.scatter(6375, 4500) # N = 6375kN, M = 4500kNm
+N = [6375, 5135, 4575]
+M = [0, 7200, 7200]
+plt.scatter(N, M) # N = 6375kN, M = 0kNm
 plt.grid()
 plt.show()
