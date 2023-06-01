@@ -279,16 +279,40 @@ data = Data(
         fck=40,
         fyk=500,
         b=lambda y: 0.8,
-        h=0.8,
+        h=0.88,
         reinforcements=[
             Reinforcement(0.08, 12 * 40**2 * pi / 4 * 1e-6),
-            Reinforcement(0.8-0.08, 12 * 40**2 * pi / 4 * 1e-6)
+            Reinforcement(0.88-0.08, 12 * 40**2 * pi / 4 * 1e-6)
         ]
     )
 )
 Resistance(data)
-N = [6375, 5135, 4575]
-M = [0, 7200, 7200]
-plt.scatter(N, M) # N = 6375kN, M = 0kNm
+
+
+#Valeurs exo 8.3, flambement
+N = [6375, 5175, 4575]
+M = [2497, 9227, 8993]
+plt.scatter(N, M)
+plt.grid()
+plt.show()
+
+#? Nouvelle section (8.3.4)
+data = Data(
+    section=Section(
+        fck=40,
+        fyk=500,
+        b=lambda y: 0.8,
+        h=1,
+        reinforcements=[
+            Reinforcement(0.08, 16 * 40**2 * pi / 4 * 1e-6),
+            Reinforcement(1-0.08, 16 * 40**2 * pi / 4 * 1e-6)
+        ]
+    )
+)
+Resistance(data)
+#Valeurs exo 8.3, flambement
+N = [6375, 5175, 4575]
+M = [2497, 9227, 8993]
+plt.scatter(N, M)
 plt.grid()
 plt.show()
