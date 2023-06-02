@@ -18,4 +18,4 @@ def choix_armatures(aire_min):
 
 
 
-choix_armatures(110.79)
+choix_armatures(20.4)
