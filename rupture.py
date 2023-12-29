@@ -191,7 +191,7 @@ def Resistance(data: Data):
         print(f"ec={s['ec']*100:6.3f}% es={s['es']*100:6.3f}% x/d={s['x']/s['d']:6.3f} Fc={s['Fc']:8.1f}kN Fs={s['Fs']:8.1f}kN NRd={s['NRd']:8.1f}kN MRd={s['MRd']:8.1f}kNm")
     #Plot du diagramme d'interaction
     plt.plot(abs[:len(interaction)], ord[:len(interaction)], 'blue', linestyle='dashed')
-    plt.plot(abs[len(interaction):], ord[len(interaction):], 'blue', linestyle='dashed')
+    plt.plot(np.flip(abs[len(interaction):]), np.flip(ord[len(interaction):]), 'blue', linestyle='dashed')
     plt.scatter(abs, ord, color='salmon')
     if data.NEd is not None:
         print("ULS Check")
